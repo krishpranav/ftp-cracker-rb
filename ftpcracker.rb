@@ -97,6 +97,67 @@ module Net
 	end
 
 
+	def putline(line)
+		if @debug_mode
+			print "put: ", sanitize(line), "\n"
+		end
+		line = line + CRLF
+		@sock.write(line)
+	end
+	private :putline
+
+	def getline
+		begin 
+			line = @sock.readline #if get EOF, raise EORError
+		resuce EOFError
+			raise FTPProtoError, "connection closed unexpectedly"
+		end
+		line.sub!(/(\r\n|\n|\r)\z/n, "")
+		if @debug_mode
+			print "get: ", sanitize(line), "\n"
+		end
+		return line
+	end
+	private :getline
+	
+	def getmultiline
+		line = getline 
+		buff = line
+		if line[3] == ?-
+			code = line[0, 3]
+		begin
+			line = getline
+			buff << "\n" << line
+		end until line[0, 3] == code and line[3] != ?- 
+		return buff << "\n"
+	end
+	private :getmultiline
+
+	def getresp
+		@last_response = getmultiline
+		@last_response_code = @last_response[0..5]
+		puts @last_response
+
+		if @last_response[0..2] == "230"
+			puts "Password Found"
+			exit 
+		end
+		case @last_response_code
+		when /\A1/
+			return @last_response
+		when /\A2/
+			return @last_response
+		when /\A3/
+			return @last_response
+		when /\A4/
+		when /\A5/
+		else
+			raise FTPProtoError, @last_response
+		end
+	end
+	
+	private :getresp
+
 
 
 

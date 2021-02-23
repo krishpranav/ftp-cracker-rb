@@ -158,6 +158,86 @@ module Net
 	
 	private :getresp
 
+	def voidresp
+		resp = getresp
+		if resp[0] != ?2
+			raise FTPReplyError, resp
+		end
+	end
+	private :voidresp
+	
+	
+	def sendcmd(cmd)
+		synchronize do
+			putline(cmd)
+			return getresp
+		end
+	end
+
+	def voidcmd(cmd)
+		synchronize do 
+			putline(cmd)
+			voidresp
+		end
+	end
+
+	def login(user = "anonymous", passwd = nil, acct = nil)
+		if user == "anonymous" and passwd = nil
+			passwd = getaddress
+		end
+
+		resp = ""
+		synchronize do 
+			resp = snedcmd('USER' + user)
+			if resp[0] == ?3
+				resp = sendcmd('PASS' + passwd)
+			end
+		end
+		
+		@welcome = resp
+	end
+
+	def chdir(dirname)
+		if dirname == ".."
+		  begin
+			voidcmd("CDUP")
+			return
+			rescue FTPPermError
+		  if $![0, 3] != "500"
+		  raise FTPPermError, $!
+		 end
+		 end
+		end
+		cmd = "CWD " + dirname
+		voidcmd(cmd)
+	  end
+  
+	  # Creates a remote directory.
+	  def mkdir(dirname)
+		resp = sendcmd("MKD " + dirname)
+		return parse257(resp)
+	  end
+  
+  
+	  # Removes a remote directory.
+	  def rmdir(dirname)
+		voidcmd("RMD " + dirname)
+	  end
+  
+  
+	  def quit
+		voidcmd("QUIT")
+	  end
+  
+	  # Closes the connection.  Further operations are impossible until you open
+	  # a new connection with #connect.
+	  def close
+		@sock.close if @sock and not @sock.closed?
+	  end
+	end
+  end
+  
+
 
 
 

@@ -6,3 +6,5 @@ A simple ruby tool for cracking ftp ports on a website
 - cd ftp-cracker-rb
 - sudo chmod +x *
 - ruby ftpcracker.rb
+
+# Author: krishpranav
